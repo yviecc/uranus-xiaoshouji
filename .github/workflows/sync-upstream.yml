@@ -1,0 +1,46 @@
+
+name: Sync Uranus Phone
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout my repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download original project
+        run: |
+          git clone --depth 1 --branch main \
+            https://github.com/nikonotnicotine/Uranus_Phone.git \
+            "$RUNNER_TEMP/uranus-upstream"
+
+      - name: Sync project files
+        run: |
+          rsync -a --delete \
+            --exclude='/.git/' \
+            --exclude='/.github/' \
+            "$RUNNER_TEMP/uranus-upstream/" ./
+
+      - name: Commit updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Already up to date."
+          else
+            git commit -m "Sync latest Uranus Phone"
+            git push origin HEAD:main
+          fi
